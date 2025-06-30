@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-const PeopleList = ({ persons }) => {
-  return persons.map((person) => (
+const PeopleList = ({ people }) => {
+  return people.map((person) => (
     <div key={person.name}>
       {Object.keys(person).map((key) => (
         <span key={key}>{person[key]} </span>
@@ -10,14 +11,14 @@ const PeopleList = ({ persons }) => {
   ));
 };
 
-const People = ({ persons, searchValue }) => {
+const People = ({ people, searchValue }) => {
   const visiblePeople = searchValue
-    ? persons.filter((person) =>
+    ? people.filter((person) =>
         person.name.toLowerCase().includes(searchValue.toLowerCase())
       )
-    : persons;
+    : people;
 
-  return <PeopleList persons={visiblePeople} />;
+  return <PeopleList people={visiblePeople} />;
 };
 
 const PersonForm = ({ newPerson, handleChange, handleSubmit }) => {
@@ -56,12 +57,7 @@ const Filter = ({ searchValue, handleSearchChange }) => {
 };
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456", id: 1 },
-    { name: "Ada Lovelace", number: "39-44-5323523", id: 2 },
-    { name: "Dan Abramov", number: "12-43-234345", id: 3 },
-    { name: "Mary Poppendieck", number: "39-23-6423122", id: 4 },
-  ]);
+  const [people, setPeople] = useState([]);
   const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [searchValue, setSearchValue] = useState("");
 
@@ -70,12 +66,12 @@ const App = () => {
 
     const name = newPerson.name.trim();
 
-    if (persons.find((person) => person.name === name)) {
+    if (people.find((person) => person.name === name)) {
       alert(`${name} is already added to phonebook`);
       return;
     }
 
-    setPersons((people) => [...people, { ...newPerson }]);
+    setPeople((people) => [...people, { ...newPerson }]);
     setNewPerson({ name: "", number: "" });
   };
 
@@ -87,6 +83,11 @@ const App = () => {
     setSearchValue(e.target.value);
   };
 
+  useEffect(() => {
+    axios.get("http://localhost:3001/people").then((response) => {
+      setPeople(response.data);
+    });
+  }, []);
   return (
     <div>
       <h2>Phonebook</h2>
@@ -101,7 +102,7 @@ const App = () => {
         handleSubmit={handleSubmit}
       />
       <h3>Numbers</h3>
-      <People persons={persons} searchValue={searchValue} />
+      <People people={people} searchValue={searchValue} />
     </div>
   );
 };
