@@ -1,24 +1,36 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import peopleApi from "./api/peopleApi";
 
-const PeopleList = ({ people }) => {
-  return people.map((person) => (
-    <div key={person.name}>
-      {Object.keys(person).map((key) => (
-        <span key={key}>{person[key]} </span>
-      ))}
-    </div>
-  ));
+const PeopleList = ({ people, handleDeleteClick }) => {
+  return (
+    <table>
+      <tbody>
+        {people.map((person) => (
+          <tr key={person.name}>
+            <td>{person.name}</td>
+            <td>{person.number}</td>
+            <td>
+              <button type="button" onClick={() => handleDeleteClick(person)}>
+                delete
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 };
 
-const People = ({ people, searchValue }) => {
+const People = ({ people, searchValue, handleDeleteClick }) => {
   const visiblePeople = searchValue
     ? people.filter((person) =>
         person.name.toLowerCase().includes(searchValue.toLowerCase())
       )
     : people;
 
-  return <PeopleList people={visiblePeople} />;
+  return (
+    <PeopleList people={visiblePeople} handleDeleteClick={handleDeleteClick} />
+  );
 };
 
 const PersonForm = ({ newPerson, handleChange, handleSubmit }) => {
@@ -30,6 +42,7 @@ const PersonForm = ({ newPerson, handleChange, handleSubmit }) => {
           <input
             type={fieldKey === "number" ? "tel" : "text"}
             name={fieldKey}
+            required
             value={newPerson[fieldKey]}
             onChange={handleChange}
           />
@@ -61,18 +74,71 @@ const App = () => {
   const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [searchValue, setSearchValue] = useState("");
 
+  const confirmUpdate = (name) => {
+    const confirmed = window.confirm(
+      `Do you want to update the details for ${name}?`
+    );
+    return confirmed;
+  };
+
+  const handleUpdate = (person) => {
+    const updatedPerson = { ...person, number: newPerson.number };
+
+    peopleApi
+      .updatePerson(person.id, updatedPerson)
+      .then((updatedPerson) => {
+        setPeople((people) =>
+          people.map((p) => (p.id === person.id ? updatedPerson : p))
+        );
+        setNewPerson({ name: "", number: "" });
+      })
+      .catch((error) => {
+        console.error("Error updating person:", error);
+        alert(`Failed to update ${person.name}. Please try again later.`);
+      });
+  };
+
+  const handleDeleteClick = (person) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${person.name}?`
+    );
+
+    if (!confirmed) return;
+
+    peopleApi
+      .removePerson(person.id)
+      .then(() => {
+        setPeople((people) => people.filter((p) => p.id !== person.id));
+      })
+      .catch((error) => {
+        console.error("Error deleting person:", error);
+        alert(`Failed to delete ${person.name}. Please try again later.`);
+      });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const name = newPerson.name.trim();
+    const existingPerson = people.find((p) => p.name === newPerson.name.trim());
 
-    if (people.find((person) => person.name === name)) {
-      alert(`${name} is already added to phonebook`);
+    if (existingPerson) {
+      if (confirmUpdate(newPerson.name.trim())) {
+        handleUpdate(existingPerson);
+      }
+
       return;
     }
 
-    setPeople((people) => [...people, { ...newPerson }]);
-    setNewPerson({ name: "", number: "" });
+    peopleApi
+      .addPerson(newPerson)
+      .then((addedPerson) => {
+        setPeople((people) => [...people, addedPerson]);
+        setNewPerson({ name: "", number: "" });
+      })
+      .catch((error) => {
+        console.error("Error adding person:", error);
+        alert("Failed to add new person. Please try again later.");
+      });
   };
 
   const handleChange = (e) => {
@@ -84,10 +150,9 @@ const App = () => {
   };
 
   useEffect(() => {
-    axios.get("http://localhost:3001/people").then((response) => {
-      setPeople(response.data);
-    });
+    peopleApi.getAll().then((data) => setPeople(data));
   }, []);
+
   return (
     <div>
       <h2>Phonebook</h2>
@@ -102,7 +167,11 @@ const App = () => {
         handleSubmit={handleSubmit}
       />
       <h3>Numbers</h3>
-      <People people={people} searchValue={searchValue} />
+      <People
+        people={people}
+        searchValue={searchValue}
+        handleDeleteClick={handleDeleteClick}
+      />
     </div>
   );
 };
