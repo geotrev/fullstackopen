@@ -2,21 +2,35 @@ import { useState } from "react";
 import countriesApi from "./api/countriesApi";
 import { filterCountries } from "./helpers";
 
-const CountryList = ({ countries }) => {
+const CountryList = ({ countries, setActiveCountry }) => {
   return (
-    <ul>
-      {countries.map((country) => (
-        <li key={country.name.common}>{country.name.common}</li>
-      ))}
-    </ul>
+    <table>
+      <tbody>
+        {countries.map((country) => (
+          <tr key={country.name.common}>
+            <td>{country.name.common}</td>
+            <td>
+              <button type="button" onClick={() => setActiveCountry(country)}>
+                Show
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 };
 
-const Country = ({ data }) => {
+const Country = ({ data, isList, setActiveCountry }) => {
   if (!data) return null;
 
   return (
     <div>
+      {isList && (
+        <button type="button" onClick={() => setActiveCountry(null)}>
+          Back to list
+        </button>
+      )}
       <h2>{data.name.common}</h2>
       <p>Capital: {data.capital}</p>
       <p>Area: {data.area} km²</p>
@@ -29,6 +43,23 @@ const Country = ({ data }) => {
       <h3>Flag:</h3>
       <img src={data.flags.png} alt={data.flags.alt} />
     </div>
+  );
+};
+
+const Countries = ({ countries }) => {
+  const isSingleCountry = countries.length === 1;
+  const [activeCountry, setActiveCountry] = useState(
+    isSingleCountry ? countries[0] : null
+  );
+
+  return activeCountry ? (
+    <Country
+      data={activeCountry}
+      isList={countries.length > 1}
+      setActiveCountry={setActiveCountry}
+    />
+  ) : (
+    <CountryList countries={countries} setActiveCountry={setActiveCountry} />
   );
 };
 
@@ -91,11 +122,7 @@ function App() {
       </form>
       {loading && <p>Loading...</p>}
       {countriesOverload && <p>Too many matches, specify another filter</p>}
-      {countries.length > 1 ? (
-        <CountryList countries={countries} />
-      ) : (
-        <Country data={countries[0]} />
-      )}
+      {countries.length > 0 && <Countries countries={countries} />}
     </>
   );
 }
