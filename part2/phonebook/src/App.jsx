@@ -1,78 +1,25 @@
 import { useState, useEffect } from "react";
 import peopleApi from "./api/peopleApi";
-
-const PeopleList = ({ people, handleDeleteClick }) => {
-  return (
-    <table>
-      <tbody>
-        {people.map((person) => (
-          <tr key={person.name}>
-            <td>{person.name}</td>
-            <td>{person.number}</td>
-            <td>
-              <button type="button" onClick={() => handleDeleteClick(person)}>
-                delete
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-
-const People = ({ people, searchValue, handleDeleteClick }) => {
-  const visiblePeople = searchValue
-    ? people.filter((person) =>
-        person.name.toLowerCase().includes(searchValue.toLowerCase())
-      )
-    : people;
-
-  return (
-    <PeopleList people={visiblePeople} handleDeleteClick={handleDeleteClick} />
-  );
-};
-
-const PersonForm = ({ newPerson, handleChange, handleSubmit }) => {
-  return (
-    <form onSubmit={handleSubmit}>
-      {Object.keys(newPerson).map((fieldKey) => (
-        <div key={fieldKey}>
-          {fieldKey}:{" "}
-          <input
-            type={fieldKey === "number" ? "tel" : "text"}
-            name={fieldKey}
-            required
-            value={newPerson[fieldKey]}
-            onChange={handleChange}
-          />
-        </div>
-      ))}
-      <div>
-        <button type="submit">add</button>
-      </div>
-    </form>
-  );
-};
-
-const Filter = ({ searchValue, handleSearchChange }) => {
-  return (
-    <div>
-      Filter people by name:{" "}
-      <input
-        type="search"
-        name="filter"
-        value={searchValue}
-        onChange={handleSearchChange}
-      />
-    </div>
-  );
-};
+import { People } from "./components/People";
+import { Filter } from "./components/Filter";
+import { PersonForm } from "./components/PersonForm";
+import { Notification } from "./components/Notification";
 
 const App = () => {
   const [people, setPeople] = useState([]);
   const [newPerson, setNewPerson] = useState({ name: "", number: "" });
   const [searchValue, setSearchValue] = useState("");
+  const [notification, setNotification] = useState({
+    type: "info",
+    message: "",
+  });
+
+  const setTimedNotification = ({ message, type = "info" }) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 5000);
+  };
 
   const confirmUpdate = (name) => {
     const confirmed = window.confirm(
@@ -91,10 +38,19 @@ const App = () => {
           people.map((p) => (p.id === person.id ? updatedPerson : p))
         );
         setNewPerson({ name: "", number: "" });
+        setTimedNotification({
+          type: "success",
+          message: `Updated ${person.name}'s number.`,
+        });
       })
       .catch((error) => {
         console.error("Error updating person:", error);
-        alert(`Failed to update ${person.name}. Please try again later.`);
+        setNotification({
+          type: "error",
+          message: `${person.name} has been removed.`,
+        });
+        setPeople((people) => people.filter((p) => p.id !== person.id));
+        setNewPerson({ name: "", number: "" });
       });
   };
 
@@ -112,7 +68,11 @@ const App = () => {
       })
       .catch((error) => {
         console.error("Error deleting person:", error);
-        alert(`Failed to delete ${person.name}. Please try again later.`);
+        setNotification({
+          type: "error",
+          message: `${person.name} has already been removed.`,
+        });
+        setPeople((people) => people.filter((p) => p.id !== person.id));
       });
   };
 
@@ -134,6 +94,10 @@ const App = () => {
       .then((addedPerson) => {
         setPeople((people) => [...people, addedPerson]);
         setNewPerson({ name: "", number: "" });
+        setTimedNotification({
+          type: "success",
+          message: `Added ${addedPerson.name}.`,
+        });
       })
       .catch((error) => {
         console.error("Error adding person:", error);
@@ -156,6 +120,11 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      {notification.message && (
+        <Notification type={notification.type}>
+          {notification.message}
+        </Notification>
+      )}
       <Filter
         searchValue={searchValue}
         handleSearchChange={handleSearchChange}
