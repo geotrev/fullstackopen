@@ -1,8 +1,14 @@
 import express from "express";
+import morgan from "morgan";
 
 const app = express();
 const PORT = 3001;
 
+morgan.token("person", (req) => {
+  return req.method === "POST" ? JSON.stringify(req.body) : "";
+});
+
+app.use(morgan(":method :url :status :response-time ms :person"));
 app.use(express.json());
 
 const people = [
@@ -80,6 +86,12 @@ app.delete("/api/persons/:id", (req, res) => {
     res.status(404).send({ error: "Person not found" });
   }
 });
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
