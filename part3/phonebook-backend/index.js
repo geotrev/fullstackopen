@@ -1,6 +1,5 @@
 import express from "express";
 import morgan from "morgan";
-import cors from "cors";
 
 const app = express();
 app.use(express.static("dist"));
@@ -13,7 +12,6 @@ morgan.token("person", (req) => {
 
 app.use(morgan(":method :url :status :response-time ms :person"));
 app.use(express.json());
-app.use(cors());
 
 const people = [
   {
