@@ -7,7 +7,8 @@
     "build": "echo 'No build step defined' && exit 0",
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "server": "npx json-server --port 3001 db.json"
+    "build:ui": "rm -rf dist && cd ../../part2/phonebook && npm run build && cp -r dist ../../part3/phonebook-backend/dist",
+    "deploy:full": "npm run build:ui && git add . && git commit -m 'chore: deploy' && git push"
   },
   "keywords": [],
   "author": "",

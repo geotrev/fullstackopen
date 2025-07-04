@@ -3,6 +3,8 @@ import morgan from "morgan";
 import cors from "cors";
 
 const app = express();
+app.use(express.static("dist"));
+
 const PORT = process.env.PORT || 3001;
 
 morgan.token("person", (req) => {
