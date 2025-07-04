@@ -4,6 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "echo 'No build step defined' && exit 0",
     "start": "node index.js",
     "dev": "node --watch index.js",
     "server": "npx json-server --port 3001 db.json"
