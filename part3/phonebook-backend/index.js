@@ -1,8 +1,9 @@
 import express from "express";
 import morgan from "morgan";
+import cors from "cors";
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 morgan.token("person", (req) => {
   return req.method === "POST" ? JSON.stringify(req.body) : "";
@@ -10,6 +11,7 @@ morgan.token("person", (req) => {
 
 app.use(morgan(":method :url :status :response-time ms :person"));
 app.use(express.json());
+app.use(cors());
 
 const people = [
   {
